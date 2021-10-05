@@ -65,7 +65,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 from pathlib import Path
 
-home = str(Path.home()) + "/"
+home = str(Path.home()) + "/em-metrics/"
 
 # Metric Type dictonary to display the output for better reading
 metricType_dictionary = {
