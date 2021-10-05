@@ -23,6 +23,7 @@ cat $HOME/em-metrics/output/partial_temperature_metrics.csv >> $HOME/em-metrics/
 rm $HOME/em-metrics/output/partial_temperature_metrics.csv
 
 ## Add to the repository
+cd $HOME/em-metrics/
 git add $HOME/em-metrics/output/power_metrics.csv
 git add $HOME/em-metrics/output/temperature_metrics.csv
 git commit -m "Update power and temperature `date`"
