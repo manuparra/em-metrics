@@ -62,6 +62,9 @@ from columnar import columnar
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+from pathlib import Path
+
+home = str(Path.home())
 
 # Metric Type dictonary to display the output for better reading
 metricType_dictionary = {
@@ -185,7 +188,7 @@ def get_power_manager_group_metrics(ip_address, user_name, password, groupID, me
                         dt_group_metrics[dt]={t[0]:t[1]}
 
                 sorted_metrics = collections.OrderedDict(sorted(dt_group_metrics.items()))                    
-                with open('output/partial_power_metrics.csv', mode='w') as metrics_file:
+                with open(home + 'output/partial_power_metrics.csv', mode='w') as metrics_file:
                     for k, v in sorted_metrics.items():                        
                         csv_metrics = csv.writer(metrics_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)    
                         csv_metrics.writerow([k,v['Maximum_system_power_consumption'],
