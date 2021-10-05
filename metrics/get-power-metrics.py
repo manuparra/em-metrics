@@ -45,8 +45,9 @@
 
 # Import the modules required for this script
 import argparse
-import json
+import json,csv
 import sys
+import collections
 from argparse import RawTextHelpFormatter
 
 # Import the modules required for this script
@@ -99,98 +100,105 @@ duration_dictionary = {
 
 def get_power_manager_group_metrics(ip_address, user_name, password, groupID, metricType, duration, sort):
     """ Authenticate with OpenManage Enterprise, get power manager Group metrics"""
-    try:
-        # Defining Session URL & headers
-        session_url = 'https://%s/api/SessionService/Sessions' % ip_address
-        headers = {'content-type': 'application/json'}
+    
+    # Defining Session URL & headers
+    session_url = 'https://%s/api/SessionService/Sessions' % ip_address
+    headers = {'content-type': 'application/json'}
 
-        # Define Payload for posting session API
-        user_details = {'UserName': user_name,
-                        'Password': password,
-                        'SessionType': 'API'}
+    # Define Payload for posting session API
+    user_details = {'UserName': user_name,
+                    'Password': password,
+                    'SessionType': 'API'}
 
-        # Define metric URL
-        metric_url = "https://%s/api/MetricService/Metrics" % ip_address
+    # Define metric URL
+    metric_url = "https://%s/api/MetricService/Metrics" % ip_address
 
-        # Payload for posting metric API
-        metrics_payload = {"PluginId": "2F6D05BE-EE4B-4B0E-B873-C8D2F64A4625",
-                           "EntityType": 1,
-                           "EntityId": int(groupID),
-                           "MetricTypes": metricType,
-                           "Duration": int(duration),
-                           "SortOrder": int(sort)}
+    # Payload for posting metric API
+    metrics_payload = {"PluginId": "2F6D05BE-EE4B-4B0E-B873-C8D2F64A4625",
+                        "EntityType": 1,
+                        "EntityId": int(groupID),
+                        "MetricTypes": metricType,
+                        "Duration": int(duration),
+                        "SortOrder": int(sort)}
 
-        # Define OUTPUT header & data format
-        output_column_headers = ['Metric_Type', 'Metric_Value', 'Collected_at']
-        output_column_data = []
+    # Define OUTPUT header & data format
+    output_column_headers = ['Metric_Type', 'Metric_Value', 'Collected_at']
+    output_column_data = []
 
-        # Create the session with OpenManage Enterprise
-        session_info = requests.post(session_url, verify=False,
-                                     data=json.dumps(user_details),
-                                     headers=headers)
-        # If session doesn't create, message the user with error
-        if session_info.status_code != 201 & session_info.status_code != 200:
+    # Create the session with OpenManage Enterprise
+    session_info = requests.post(session_url, verify=False,
+                                    data=json.dumps(user_details),
+                                    headers=headers)
+    # If session doesn't create, message the user with error
+    if session_info.status_code != 201 & session_info.status_code != 200:
 
-            session_json_data = session_info.json()
-            if 'error' in session_json_data:
-                error_content = session_json_data['error']
+        session_json_data = session_info.json()
+        if 'error' in session_json_data:
+            error_content = session_json_data['error']
+            if '@Message.ExtendedInfo' not in error_content:
+                print("Unable to create a session with  %s" % ip_address)
+            else:
+                extended_error_content = error_content['@Message.ExtendedInfo']
+                print(
+                    "Unable to create a session with  %s. See below ExtendedInfo for more information" % ip_address)
+                print(extended_error_content[0]['Message'])
+        else:
+            print("Unable to create a session with  %s. Please try again later" % ip_address)
+    else:
+        headers['X-Auth-Token'] = session_info.headers['X-Auth-Token']
+
+        # Group Metric Post API call with OpenManage Enterprise
+        group_metric_response = requests.post(metric_url,
+                                                data=json.dumps(metrics_payload), headers=headers, verify=False)
+        group_metric_json_data = group_metric_response.json()
+
+        # If Group metric API doesn't respond or failed, message the user with error
+        if group_metric_response.status_code != 201 & group_metric_response.status_code != 200:
+            if 'error' in group_metric_json_data:
+                error_content = group_metric_json_data['error']
                 if '@Message.ExtendedInfo' not in error_content:
-                    print("Unable to create a session with  %s" % ip_address)
+                    print("Unable to retrieve Power Manager metric from %s" % ip_address)
                 else:
                     extended_error_content = error_content['@Message.ExtendedInfo']
                     print(
-                        "Unable to create a session with  %s. See below ExtendedInfo for more information" % ip_address)
+                        "Unable to retrieve Power Manager metric from %s. See below ExtendedInfo for more information" % ip_address)
                     print(extended_error_content[0]['Message'])
             else:
-                print("Unable to create a session with  %s. Please try again later" % ip_address)
+                print("Unable to retrieve Power Manager metric from %s" % ip_address)
         else:
-            headers['X-Auth-Token'] = session_info.headers['X-Auth-Token']
+            group_metric_content = json.loads(group_metric_response.content)
 
-            # Group Metric Post API call with OpenManage Enterprise
-            group_metric_response = requests.post(metric_url,
-                                                  data=json.dumps(metrics_payload), headers=headers, verify=False)
-            group_metric_json_data = group_metric_response.json()
+            if group_metric_content:
+                # For every elements in the metric response, store the details in the table
+                for metric_elem in group_metric_content["Value"]:
+                    group_metric_data = [metricType_dictionary[int(metric_elem["Type"])], metric_elem["Value"],
+                                            metric_elem["Timestamp"]]
+                    output_column_data.append(group_metric_data)                    
+                # Grouping by data and columnar measurement (date,m1,m2,3)
+                dt_group_metrics = {}
+                for t in output_column_data:
+                    dt = datetime.strptime(t[2],"%Y-%m-%d %H:%M:%S.%f").strftime("%Y-%m-%d %H:%M")                        
+                    if dt in dt_group_metrics: 
 
-            # If Group metric API doesn't respond or failed, message the user with error
-            if group_metric_response.status_code != 201 & group_metric_response.status_code != 200:
-                if 'error' in group_metric_json_data:
-                    error_content = group_metric_json_data['error']
-                    if '@Message.ExtendedInfo' not in error_content:
-                        print("Unable to retrieve Power Manager metric from %s" % ip_address)
+                        dt_group_metrics[dt].update({t[0]:t[1]})
                     else:
-                        extended_error_content = error_content['@Message.ExtendedInfo']
-                        print(
-                            "Unable to retrieve Power Manager metric from %s. See below ExtendedInfo for more information" % ip_address)
-                        print(extended_error_content[0]['Message'])
-                else:
-                    print("Unable to retrieve Power Manager metric from %s" % ip_address)
-            else:
-                group_metric_content = json.loads(group_metric_response.content)
+                        dt_group_metrics[dt]={t[0]:t[1]}
 
-                if group_metric_content:
-                    # For every elements in the metric response, store the details in the table
-                    for metric_elem in group_metric_content["Value"]:
-                        group_metric_data = [metricType_dictionary[int(metric_elem["Type"])], metric_elem["Value"],
-                                             metric_elem["Timestamp"]]
-                        output_column_data.append(group_metric_data)                    
-                    # Grouping by data and columnar measurement (date,m1,m2,3)
-                    dt_group_metrics = {}
-                    for t in output_column_data:
-                        dt = datetime.strptime(t[2],"%Y-%m-%d %H:%M:%S.%f").strftime("%Y-%m-%d %H:%M")                        
-                        if dt in dt_group_metrics: 
-
-                            dt_group_metrics[dt].update({t[0]:t[1]})
-                        else:
-                            dt_group_metrics[dt]={t[0]:t[1]}
+                sorted_metrics = collections.OrderedDict(sorted(dt_group_metrics.items()))                    
+                with open('partial_metrics.csv', mode='w') as metrics_file:
+                    for k, v in sorted_metrics.items():
+                        print(k,v)
+                        csv_metrics = csv.writer(metrics_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)    
+                        csv_metrics.writerow([k,v['Maximum_system_power_consumption'],
+                                                v['Average_system_power_consumption'],
+                                                v['Minimum_system_power_consumption']])
 
                     
-                                        
-                        
-                else:
-                    print("No Power Manager Metrics for group ID -> %s collected in %s time window" % (
-                        groupID, duration_dictionary[int(duration)]))
-    except Exception as error:
-        print("Unexpected error:", str(error))
+            else:
+                print("No Power Manager Metrics for group ID -> %s collected in %s time window" % (
+                    groupID, duration_dictionary[int(duration)]))
+    #except Exception as error:
+    #    print("Unexpected error:", str(error))
 
 
 if __name__ == '__main__':
