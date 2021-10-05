@@ -173,7 +173,7 @@ def get_power_manager_group_metrics(ip_address, user_name, password, groupID, me
                 for metric_elem in group_metric_content["Value"]:
                     group_metric_data = [metricType_dictionary[int(metric_elem["Type"])], metric_elem["Value"],
                                             metric_elem["Timestamp"]]
-                    output_column_data.append(group_metric_data)                    
+                    output_column_data.append(group_metric_data)                 
                 # Grouping by data and columnar measurement (date,m1,m2,3)
                 dt_group_metrics = {}
                 for t in output_column_data:
@@ -185,12 +185,12 @@ def get_power_manager_group_metrics(ip_address, user_name, password, groupID, me
                         dt_group_metrics[dt]={t[0]:t[1]}
 
                 sorted_metrics = collections.OrderedDict(sorted(dt_group_metrics.items()))                    
-                with open('output/partial_power_metrics.csv', mode='w') as metrics_file:
-                    for k, v in sorted_metrics.items():                        
+                with open('output/partial_temperature_metrics.csv', mode='w') as metrics_file:
+                    for k, v in sorted_metrics.items():                                                
                         csv_metrics = csv.writer(metrics_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)    
-                        csv_metrics.writerow([k,v['Maximum_system_power_consumption'],
-                                                v['Average_system_power_consumption'],
-                                                v['Minimum_system_power_consumption']])
+                        csv_metrics.writerow([k,v['Maximum_Inlet_Temperature'],
+                                                v['Average_Inlet_Temperature'],
+                                                ])
 
                     
             else:
@@ -232,7 +232,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     
-    metricType="1,2,3"
+    metricType="5,6,7"
     mt_list = []
     if metricType:
         if "," in metricType:
