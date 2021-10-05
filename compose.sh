@@ -1,7 +1,6 @@
-
 #!/bin/bash
 
-
+# Start Metrics : Power and Temperature
 python3 $HOME/em-metrics/metrics/get-power-metrics.py \
   --ip $1\
   --password $2\
