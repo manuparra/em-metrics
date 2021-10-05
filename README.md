@@ -41,7 +41,13 @@ They are stored as: ``power_metrics.csv`` and ``temperature_metrics.csv`` respec
 
 ### Power Metrics
 
-It has 4 fields: ``date``, ``maximum``, ``average`` and  ``minimum`` power consumption.
+It has 4 fields: ``date``, ``maximum``, ``average`` and  ``minimum`` power consumption in Watts/houe (W/h).
+
+````
+2021-10-05 11:15,5263.0,4126.0,3973.0
+2021-10-05 11:30,5299.0,4124.0,3977.0
+2021-10-05 11:45,5288.0,4129.0,3973.0
+````
 
 ### Temperature Metrics
 
@@ -54,4 +60,4 @@ It has 3 fields: ``date``, ``maximum`` and ``average`` temperature in Celsius (C
 2021-10-05 12:00,28.0,24.894736842105264
 ````
 
-##
+
