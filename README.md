@@ -31,6 +31,20 @@ Example:
 bash compose.sh 10.0.10.1 admin adminpwd 10923 1
 ````
 
+Parameters:
+
+- DURATION:
+    - ``0``: "Recent",
+    - ``1``: "One_hour",
+    - ``2``: "Six_hours",
+    - ``3``: "Twelve_hours",
+    - ``4``: "One_day",
+    - ``5``: "Seven_Days",
+    - ``6``: "One_Month",
+    - ``7``: "Three_Months",
+    - ``8``: "Six_Months",
+    - ``9``: "One_Year"
+
 ## Output results
 
 Within the output directory all metric results for: 
@@ -39,7 +53,7 @@ Within the output directory all metric results for:
 
 They are stored as: ``power_metrics.csv`` and ``temperature_metrics.csv`` respectively.
 
-### Power Metrics
+### Power consumption Metrics
 
 It has 4 fields: ``date``, ``maximum``, ``average`` and  ``minimum`` power consumption in Watts/houe (W/h).
 
@@ -59,5 +73,13 @@ It has 3 fields: ``date``, ``maximum`` and ``average`` temperature in Celsius (C
 2021-10-05 11:45,28.0,24.894736842105264
 2021-10-05 12:00,28.0,24.894736842105264
 ````
+
+## Workflow
+
+0. Use a CRON job to run ``compose.sh``
+1. App capture data: power and temperature
+2. Data are append to ``output/*.csv``
+3. Folder ``output/*.csv`` is commited to this repository to store data
+
 
 
