@@ -2,7 +2,6 @@
 This is a repository to extract different metrics from the OpenManage Enterprise service running in a Dell cluster.
 
 
-
 ## How to start
 
 Clone this repository
